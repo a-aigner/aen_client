@@ -16,7 +16,7 @@ Typical usage:
 
 from .manager import AenClient
 from .exceptions import (
-    HenClientError,
+    AenClientError,
     AuthenticationError,
     PermissionDenied,
     NotFoundError,
@@ -38,9 +38,9 @@ from .types import (
 )
 
 __all__ = [
-    "HenClient",
+    "AenClient",
     # Exceptions
-    "HenClientError",
+    "AenClientError",
     "AuthenticationError",
     "PermissionDenied",
     "NotFoundError",

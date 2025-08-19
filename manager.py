@@ -236,8 +236,13 @@ class AenClient:
     # --------------------------------------------------------------------- #
     def list_files(self, object_id: str) -> List[AenFile]:
         url = build_url(self.base_url, f"/object/{object_id}/file")
-        resp = self.session.get(url, timeout=self.timeout)
-        return self._json_or_error(resp)
+        try:
+            resp = self.session.get(url, timeout=self.timeout)
+            return self._json_or_error(resp)
+        except AenClientError as e:
+            # Some objects don´t support file operations
+            if resp.status_code == 405:
+                return []
 
     def get_file(
         self,

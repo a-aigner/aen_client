@@ -1,10 +1,10 @@
 """
-hen_client – Aeneis API v2 Python wrapper.
+aen_client – Aeneis API v2 Python wrapper.
 
 Typical usage:
-    from hen_client import HenClient
+    from aen_client import AenClient
 
-    client = HenClient(
+    client = AenClient(
         base_url="http://localhost:23000/api/v2",
         username="user",
         password="pass",
@@ -70,6 +70,6 @@ except Exception:  # pragma: no cover
 __version__ = "0.1.0"
 if version is not None:
     try:
-        __version__ = version("hen-client")  # If installed as a package
+        __version__ = version("aen-client")  # If installed as a package
     except PackageNotFoundError:  # pragma: no cover
         pass

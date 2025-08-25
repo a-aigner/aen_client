@@ -1,5 +1,5 @@
 """
-manager.py – Core client for the Aeneis API v2 (hen_client)
+manager.py – Core client for the Aeneis API v2 (aen_client)
 
 Features
 - Cookie-based session auth: login via Basic Auth to /user/login, then reuse Set-Cookie.
@@ -47,7 +47,7 @@ class AenClient:
         service_id: Optional[str] = None,
         *,
         timeout: int = 30,
-        user_agent: str = "hen-client/0.1",
+        user_agent: str = "aen-client/0.1",
         raise_for_status: bool = True,
     ) -> None:
         self.base_url = base_url.rstrip("/")
@@ -272,42 +272,131 @@ class AenClient:
             self._raise_api_error(resp)
         return resp.content
 
-    def upload_file(
-        self,
-        object_id: str,
-        file_path: str,
-        *,
-        attribute_name: Optional[str] = None,
-        filename: Optional[str] = None,
+        def upload_file(
+            self,
+            object_id: str,
+            file_path: str,
+            *,
+            attribute_name: Optional[str] = None,
+            filename: Optional[str] = None,
     ) -> None:
+        """
+        POST /object/{object_id}/file
+
+        Upload a file matching Postman's approach but letting requests handle Content-Type.
+        """
+        import os
+        import mimetypes
+
         url = build_url(self.base_url, f"/object/{object_id}/file")
-        params = merge_params({"attribute_name": attribute_name}, {"filename": filename})
-        with open(file_path, "rb") as f:
-            files = {"file": (filename or file_path, f)}
-            resp = self.session.post(url, params=params, files=files, timeout=self.timeout)
-        if resp.status_code != 200:
-            self._raise_api_error(resp)
+
+        # Build query parameters exactly as documented
+        params = {}
+        if attribute_name is not None:
+            params["attribute_name"] = attribute_name
+        if filename is not None:
+            params["filename"] = filename
+
+        # Determine actual filename for the upload
+        actual_filename = filename or os.path.basename(file_path)
+
+        # Guess MIME type from file extension (like Postman does)
+        mime_type, _ = mimetypes.guess_type(file_path)
+        if mime_type is None:
+            mime_type = 'application/octet-stream'
+
+        # Save original headers
+        original_content_type = self.session.headers.get('Content-Type')
+
+        # Remove Content-Type so requests can set it with proper boundary
+        self.session.headers.pop('Content-Type', None)
+
+        try:
+            # Prepare multipart/form-data with MIME type like Postman
+            with open(file_path, "rb") as file_handle:
+                files = [
+                    ('file', (actual_filename, file_handle, mime_type))
+                ]
+
+                resp = self.session.post(
+                    url,
+                    params=params or None,
+                    files=files,
+                    timeout=self.timeout
+                )
+
+            if resp.status_code != 200:
+                self._raise_api_error(resp)
+
+        finally:
+            # Restore original Content-Type
+            if original_content_type is not None:
+                self.session.headers['Content-Type'] = original_content_type
 
     def update_file(
-        self,
-        object_id: str,
-        file_path: str,
-        *,
-        attribute_name: Optional[str] = None,
-        position: Optional[int] = None,
-        filename: Optional[str] = None,
+            self,
+            object_id: str,
+            file_path: str,
+            *,
+            attribute_name: Optional[str] = None,
+            filename: Optional[str] = None,
+            position: Optional[int] = None,
     ) -> None:
+        """
+        PUT /object/{object_id}/file
+
+        Update a file matching Postman's approach but letting requests handle Content-Type.
+        """
+        import os
+        import mimetypes
+
         url = build_url(self.base_url, f"/object/{object_id}/file")
-        params = merge_params(
-            {"attribute_name": attribute_name},
-            {"position": position},
-            {"filename": filename},
-        )
-        with open(file_path, "rb") as f:
-            files = {"file": (filename or file_path, f)}
-            resp = self.session.put(url, params=params, files=files, timeout=self.timeout)
-        if resp.status_code != 200:
-            self._raise_api_error(resp)
+
+        # Build query parameters exactly as documented
+        params = {}
+        if attribute_name is not None:
+            params["attribute_name"] = attribute_name
+        if filename is not None:
+            params["filename"] = filename
+        if position is not None:
+            params["position"] = position
+
+        # Determine actual filename for the upload
+        actual_filename = filename or os.path.basename(file_path)
+
+        # Guess MIME type from file extension (like Postman does)
+        mime_type, _ = mimetypes.guess_type(file_path)
+        if mime_type is None:
+            mime_type = 'application/octet-stream'
+
+        # Save original headers
+        original_content_type = self.session.headers.get('Content-Type')
+
+        # Remove Content-Type so requests can set it with proper boundary
+        # (Different from upload - update endpoint may behave differently)
+        self.session.headers.pop('Content-Type', None)
+
+        try:
+            # Prepare multipart/form-data with MIME type like Postman
+            with open(file_path, "rb") as file_handle:
+                files = [
+                    ('file', (actual_filename, file_handle, mime_type))
+                ]
+
+                resp = self.session.put(
+                    url,
+                    params=params or None,
+                    files=files,
+                    timeout=self.timeout
+                )
+
+            if resp.status_code != 200:
+                self._raise_api_error(resp)
+
+        finally:
+            # Restore original Content-Type
+            if original_content_type is not None:
+                self.session.headers['Content-Type'] = original_content_type
 
     def delete_file(
         self,
@@ -436,7 +525,7 @@ class AenClient:
         msg = self._extract_error_message(resp)
 
         if status in (401, 403):
-            # 401 can also occur when the session cookie expired.
+            # 401 can also occur w the session cookie expired.
             raise PermissionDenied(msg or "Permission denied / authentication required")
         if status == 404:
             raise NotFoundError(msg or "Resource not found")

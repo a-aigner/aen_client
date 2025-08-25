@@ -235,7 +235,7 @@ class AenClient:
     # Files on objects
     # --------------------------------------------------------------------- #
     def list_files(self, object_id: str) -> List[AenFile]:
-        url = build_url(self.base_url, f"/object/{object_id}/file")
+        url = build_url(self.base_url, f"/object/{object_id}/file/")
         try:
             resp = self.session.get(url, timeout=self.timeout)
             return self._json_or_error(resp)

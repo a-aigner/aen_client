@@ -265,52 +265,52 @@ class AenClient:
         *,
         attribute_name: Optional[str] = None,
         position: Optional[int] = None,
-) -> bytes:
-    """
-    GET /object/{object_id}/file/{filename}/content
-
-    Download file content as binary data.
-
-    Parameters from spec:
-    - object_id (path, required): Guid, oid or id from object
-    - filename (path, required): Filename of the file to retrieve
-    - attribute_name (query, optional): Schemaattributename from attribute of the object
-    - position (query, optional): Position of the file to retrieve
-
-    Returns: Binary file content
-    Response: 200 (success) with application/octet-stream, or 400 (retrieve failed)
-    """
-    url = build_url(self.base_url, f"/object/{object_id}/file/{filename}/content")
-
-    params = {}
-    if attribute_name is not None:
-        params["attribute_name"] = attribute_name
-    if position is not None:
-        params["position"] = position
-
-    # Save original Accept header and set it for binary content
-    original_accept = self.session.headers.get('Accept')
-    self.session.headers['Accept'] = 'application/octet-stream, */*'
-
-    try:
-        resp = self.session.get(
-            url,
-            params=params or None,
-            timeout=self.timeout,
-            stream=True
-        )
-
-        if resp.status_code != 200:
-            self._raise_api_error(resp)
-
-        return resp.content
-
-    finally:
-        # Restore original Accept header
-        if original_accept is not None:
-            self.session.headers['Accept'] = original_accept
-        else:
-            self.session.headers.pop('Accept', None)
+    ) -> bytes:
+        """
+        GET /object/{object_id}/file/{filename}/content
+    
+        Download file content as binary data.
+    
+        Parameters from spec:
+        - object_id (path, required): Guid, oid or id from object
+        - filename (path, required): Filename of the file to retrieve
+        - attribute_name (query, optional): Schemaattributename from attribute of the object
+        - position (query, optional): Position of the file to retrieve
+    
+        Returns: Binary file content
+        Response: 200 (success) with application/octet-stream, or 400 (retrieve failed)
+        """
+        url = build_url(self.base_url, f"/object/{object_id}/file/{filename}/content")
+    
+        params = {}
+        if attribute_name is not None:
+            params["attribute_name"] = attribute_name
+        if position is not None:
+            params["position"] = position
+    
+        # Save original Accept header and set it for binary content
+        original_accept = self.session.headers.get('Accept')
+        self.session.headers['Accept'] = 'application/octet-stream, */*'
+    
+        try:
+            resp = self.session.get(
+                url,
+                params=params or None,
+                timeout=self.timeout,
+                stream=True
+            )
+    
+            if resp.status_code != 200:
+                self._raise_api_error(resp)
+    
+            return resp.content
+    
+        finally:
+            # Restore original Accept header
+            if original_accept is not None:
+                self.session.headers['Accept'] = original_accept
+            else:
+                self.session.headers.pop('Accept', None)
                 
 
     def update_file(
